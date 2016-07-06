@@ -107,7 +107,7 @@ class LoopTests: XCTestCase {
 
 #if os(Linux)
 extension LoopTests {
-	static var allTests : [(String, LoopTests -> () throws -> Void)] {
+	static var allTests : [(String, (LoopTests) -> () throws -> Void)] {
 		return [
 			("testCreateDestroy", testCreateDestroy),
 			("testDefaultLoop", testDefaultLoop),

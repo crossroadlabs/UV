@@ -88,7 +88,7 @@ class StreamTests: XCTestCase {
 
 #if os(Linux)
 extension StreamTests {
-	static var allTests : [(String, StreamTests -> () throws -> Void)] {
+	static var allTests : [(String, (StreamTests) -> () throws -> Void)] {
 		return [
 			("testConnectability", testConnectability),
 		]

@@ -53,7 +53,7 @@ class UVTests: XCTestCase {
 
 #if os(Linux)
 extension UVTests {
-	static var allTests : [(String, UVTests -> () throws -> Void)] {
+	static var allTests : [(String, (UVTests) -> () throws -> Void)] {
 		return [
 			("testTimer", testTimer),
 			("testExample", testExample),
