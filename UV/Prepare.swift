@@ -16,6 +16,7 @@
 
 import Foundation
 import CUV
+import Boilerplate
 
 public typealias uv_prepare_p = UnsafeMutablePointer<uv_prepare_t>
 
@@ -27,13 +28,13 @@ public class Prepare : Handle<uv_prepare_p> {
     public init(loop:Loop, callback:PrepareCallback) throws {
         self.callback = callback
         try super.init { handle in
-            uv_prepare_init(loop.loop, handle)
+            uv_prepare_init(loop.loop, handle.portable)
         }
     }
     
     public func start() throws {
         try doWithHandle { handle in
-            try Error.handle {
+            try ccall(Error.self) {
                 uv_prepare_start(handle, prepare_cb)
             }
         }
@@ -41,14 +42,28 @@ public class Prepare : Handle<uv_prepare_p> {
     
     public func stop() throws {
         try doWithHandle { handle in
-            try Error.handle {
+            try ccall(Error.self) {
                 uv_prepare_stop(handle)
             }
         }
     }
 }
 
-private func prepare_cb(handle:uv_prepare_p) {
-    let prepare:Prepare = Prepare.fromHandle(handle)
+private func _prepare_cb(handle:uv_prepare_p?) {
+    guard let handle = handle where handle != .null else {
+        return
+    }
+    
+    let prepare:Prepare = Prepare.from(handle: handle)
     prepare.callback(prepare)
 }
+
+#if swift(>=3.0)
+    private func prepare_cb(handle:uv_prepare_p?) {
+        _prepare_cb(handle: handle)
+    }
+#else
+    private func prepare_cb(handle:uv_prepare_p) {
+        _prepare_cb(handle)
+    }
+#endif

@@ -27,15 +27,15 @@ public class Timer : Handle<uv_timer_p> {
     public init(loop:Loop, callback:TimerCallback) throws {
         self.callback = callback
         try super.init { handle in
-            uv_timer_init(loop.loop, handle)
+            uv_timer_init(loop.loop, handle.portable)
         }
     }
     
     //uv_timer_start
-    public func start(timeout:Timeout, repeatTimeout:Timeout? = nil) throws {
+    public func start(timeout timeout:Timeout, repeatTimeout:Timeout? = nil) throws {
         try doWithHandle { handle in
             let repeatTimeout = repeatTimeout ?? .Immediate
-            try Error.handle {
+            try ccall(Error.self) {
                 uv_timer_start(handle, timer_cb, timeout.uvTimeout, repeatTimeout.uvTimeout)
             }
         }
@@ -44,7 +44,7 @@ public class Timer : Handle<uv_timer_p> {
     //uv_timer_stop
     public func stop() throws {
         try doWithHandle { handle in
-            try Error.handle {
+            try ccall(Error.self) {
                 uv_timer_stop(handle)
             }
         }
@@ -53,7 +53,7 @@ public class Timer : Handle<uv_timer_p> {
     //uv_timer_again
     public func again() throws {
         try doWithHandle { handle in
-            try Error.handle {
+            try ccall(Error.self) {
                 uv_timer_again(handle)
             }
         }
@@ -62,22 +62,32 @@ public class Timer : Handle<uv_timer_p> {
     public var repeatTimeout:Timeout {
         //uv_timer_get_repeat
         get {
-            return handle.isNil() ? .Immediate : Timeout(uvTimeout: uv_timer_get_repeat(handle))
+            return handle.isNil ? .Immediate : Timeout(uvTimeout: uv_timer_get_repeat(handle.portable))
         }
         //uv_timer_set_repeat
         set {
-            if !handle.isNil() {
-                uv_timer_set_repeat(handle, newValue.uvTimeout)
+            if !handle.isNil {
+                uv_timer_set_repeat(handle.portable, newValue.uvTimeout)
             }
         }
     }
     
 }
 
-private func timer_cb(handle:uv_timer_p) {
-    let timer:Timer = Timer.fromHandle(handle)
+private func _timer_cb(handle:uv_timer_p?) {
+    let timer:Timer = Timer.from(handle: handle)
     timer.callback(timer)
 }
+
+#if swift(>=3.0)
+    private func timer_cb(handle:uv_timer_p?) {
+        _timer_cb(handle: handle)
+    }
+#else
+    private func timer_cb(handle:uv_timer_p) {
+        _timer_cb(handle)
+    }
+#endif
 
 extension Timeout {
     init(uvTimeout:UInt64) {
