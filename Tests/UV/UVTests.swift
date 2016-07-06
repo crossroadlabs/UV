@@ -55,8 +55,8 @@ class UVTests: XCTestCase {
 extension UVTests {
 	static var allTests : [(String, UVTests -> () throws -> Void)] {
 		return [
-			("testExample", testExample),
 			("testTimer", testTimer),
+			("testExample", testExample),
 		]
 	}
 }

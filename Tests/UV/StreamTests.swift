@@ -85,3 +85,13 @@ class StreamTests: XCTestCase {
         self.waitForExpectations(withTimeout: 0)
     }
 }
+
+#if os(Linux)
+extension StreamTests {
+	static var allTests : [(String, StreamTests -> () throws -> Void)] {
+		return [
+			("testConnectability", testConnectability),
+		]
+	}
+}
+#endif
