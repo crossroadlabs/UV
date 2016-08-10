@@ -9,17 +9,17 @@
 import Foundation
 
 import XCTest
-import XCTest3
-@testable import UV
 import CUV
+
+@testable import UV
 
 class StreamTests: XCTestCase {
     func testConnectability() {
         let string = "Hello TCP"
         let array:[UInt8] = Array(string.utf8)
         
-        let acceptedExpectation = self.expectation(withDescription: "ACCEPTED")
-        let connectedExpectation = self.expectation(withDescription: "CONNECTED")
+        let acceptedExpectation = self.expectation(description: "ACCEPTED")
+        let connectedExpectation = self.expectation(description: "CONNECTED")
         
         let loop = try! Loop()
         let server = try! TCP(loop: loop) { (server:UV.Stream) -> Void in
@@ -31,7 +31,7 @@ class StreamTests: XCTestCase {
                 
                 XCTAssertEqual(data.array, array)
                 
-                let writeBackExpectation = self.expectation(withDescription: "WRITE BACK")
+                let writeBackExpectation = self.expectation(description: "WRITE BACK")
                 
                 stream.write(data: data) { req, e in
                     XCTAssertNil(e)
@@ -82,7 +82,7 @@ class StreamTests: XCTestCase {
         
         loop.run(inMode: UV_RUN_DEFAULT)
         
-        self.waitForExpectations(withTimeout: 0)
+        self.waitForExpectations(timeout: 0)
     }
 }
 

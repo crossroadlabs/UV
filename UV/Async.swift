@@ -40,17 +40,7 @@ public class Async : Handle<uv_async_p> {
     }
 }
 
-private func _async_cb(handle:uv_async_p?) {
+private func async_cb(handle:uv_async_p?) {
     let async:Async = Async.from(handle:handle)
     async.callback(async)
 }
-
-#if swift(>=3.0)
-    private func async_cb(handle:uv_async_p?) {
-        return _async_cb(handle: handle)
-    }
-#else
-    private func async_cb(handle:uv_async_p) {
-        return _async_cb(handle)
-    }
-#endif

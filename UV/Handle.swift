@@ -25,10 +25,6 @@ public protocol uv_handle_type {
     var isNil:Bool {get}
     func testNil() throws
     
-#if swift(>=3.0)
-#else
-    mutating func nullify()
-#endif
     static func alloc() -> Self
     mutating func dealloc()
 }
@@ -48,69 +44,39 @@ extension UnsafeMutablePointer : uv_handle_type {
     
     public func testNil() throws {
         if isNil {
-            throw Error.HandleClosed
+            throw UVError.HandleClosed
         }
     }
     
-#if swift(>=3.0)
-#else
-    public mutating func nullify() {
-        self = nil
-    }
-#endif
-    
     public static func alloc() -> UnsafeMutablePointer {
-        return UnsafeMutablePointer(allocatingCapacity: 1)
+        return UnsafeMutablePointer.allocate(capacity: 1)
     }
     
     mutating public func dealloc() {
         self.deinitialize(count: 1)
-        self.deallocateCapacity(1)
+        self.deallocate(capacity: 1)
     }
 }
 
-#if swift(>=3.0)
-    extension Optional where Wrapped : uv_handle_type {
-        public mutating func nullify() {
-            self = nil
-        }
-        
-        public var isNil:Bool {
-            return self?.isNil ?? true
-        }
-        
-        public func testNil() throws {
-            if isNil {
-                throw Error.HandleClosed
-            }
-        }
+extension Optional where Wrapped : uv_handle_type {
+    public mutating func nullify() {
+        self = nil
+    }
     
-        public var portable:Wrapped? {
-            return self
+    public var isNil:Bool {
+        return self?.isNil ?? true
+    }
+    
+    public func testNil() throws {
+        if isNil {
+            throw UVError.HandleClosed
         }
     }
-#else
-    extension Optional where Wrapped : uv_handle_type {
-        public mutating func nullify() {
-            self?.nullify()
-            self = nil
-        }
     
-        public var isNil:Bool {
-            return self.map({$0.isNil}).getOr(else: true)
-        }
-    
-        public func testNil() throws {
-            if isNil {
-                throw Error.HandleClosed
-            }
-        }
-    
-        public var portable:Wrapped {
-            return self!
-        }
+    public var portable:Wrapped? {
+        return self
     }
-#endif
+}
 
 public typealias uv_handle_p = UnsafeMutablePointer<uv_handle_t>
 
@@ -129,7 +95,7 @@ protocol PropertyType {
 
 extension PropertyType {
     static func read(from object:Object) throws -> Type {
-        return try ccall(Error.self) { code in
+        return try ccall(UVError.self) { code in
             var value:Type = getterValue
             code = function(object, &value)
             return value
@@ -138,7 +104,7 @@ extension PropertyType {
     
     static func write(to object:Object, value:Type) throws {
         var value:Type = value
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             function(object, &value)
         }
     }
@@ -153,7 +119,7 @@ extension PropertyType {
         if let value = value {
             do {
                 try write(to: object, value: value)
-            } catch let e as Error {
+            } catch let e as UVError {
                 print(e.description)
             } catch {
                 print("Unknown error occured while setting ", name)
@@ -268,10 +234,10 @@ public class Handle<Type : uv_handle_type> : HandleBase, HandleType {
         super.init()
         
         do {
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 initializer(self.handle)
             }
-            baseHandle?.pointee.data = UnsafeMutablePointer<Void>(OpaquePointer(bitPattern: Unmanaged.passRetained(self)))
+            baseHandle?.pointee.data = Unmanaged.passRetained(self).toOpaque()
         } catch let e {
             //cleanum if not created
             handle?.dealloc()
@@ -279,7 +245,7 @@ public class Handle<Type : uv_handle_type> : HandleBase, HandleType {
         }
     }
     
-    private static func doWith<Handle: uv_handle_type, Ret>(handle handle: Handle?, fun:(Handle) throws -> Ret) throws -> Ret {
+    private static func doWith<Handle: uv_handle_type, Ret>(handle: Handle?, fun:(Handle) throws -> Ret) throws -> Ret {
         try handle.testNil()
         return try fun(handle!)
     }
@@ -400,7 +366,7 @@ public class Handle<Type : uv_handle_type> : HandleBase, HandleType {
     //present, because properties can not throw. So both ways
     public func getFileno() throws -> uv_os_fd_t {
         return try doWithBaseHandle { handle in
-            try ccall(Error.self) { code in
+            try ccall(UVError.self) { code in
                 var fileno = uv_os_fd_t()
                 code = uv_fileno(handle, &fileno)
                 return fileno
@@ -416,34 +382,23 @@ public class Handle<Type : uv_handle_type> : HandleBase, HandleType {
 }
 
 extension HandleType {
-    static func from(handle handle:uv_handle_type!) -> Self {
+    static func from(handle:uv_handle_type!) -> Self {
         let handle:uv_handle_p = handle.cast()
-        return Unmanaged.fromOpaque(OpaquePointer(handle.pointee.data)).takeUnretainedValue()
+        return Unmanaged.fromOpaque(handle.pointee.data).takeUnretainedValue()
     }
 }
 
-private func _handle_close_cb(handle:uv_handle_p?) {
-    guard let handle = handle where handle != .null else {
+private func handle_close_cb(handle:uv_handle_p?) {
+    guard let handle = handle, handle != .null else {
         return
     }
     
     if handle.pointee.data != .null {
-        let object = Unmanaged<HandleBase>.fromOpaque(OpaquePointer(handle.pointee.data)).takeRetainedValue()
+        let object = Unmanaged<HandleBase>.fromOpaque(handle.pointee.data).takeRetainedValue()
         handle.pointee.data = nil
         object.clearHandle()
     }
     
     handle.deinitialize(count: 1)
-    handle.deallocateCapacity(1)
+    handle.deallocate(capacity: 1)
 }
-
-#if swift(>=3.0)
-    private func handle_close_cb(handle:uv_handle_p?) {
-        _handle_close_cb(handle: handle)
-    }
-#else
-    private func handle_close_cb(handle:uv_handle_p) {
-        _handle_close_cb(handle)
-    }
-#endif
-

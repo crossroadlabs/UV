@@ -18,12 +18,12 @@ import CUV
 import Boilerplate
 
 //TODO: make enum
-public enum Error : ErrorProtocol {
+public enum UVError : Error {
     case WithCode(code:Int32)
     case HandleClosed
 }
 
-extension Error : ErrorWithCodeType {
+extension UVError : ErrorWithCodeType {
     public init(code:Int32) {
         self = .WithCode(code: code)
     }
@@ -32,12 +32,12 @@ extension Error : ErrorWithCodeType {
         return code < 0
     }
     
-    public static func error(code code:Int32) -> Error? {
-        return isError(code) ? Error(code: code) : nil
+    public static func error(code:Int32) -> UVError? {
+        return isError(code) ? UVError(code: code) : nil
     }
 }
 
-public extension Error {
+public extension UVError {
     public var name:String {
         get {
             switch self {
@@ -50,7 +50,7 @@ public extension Error {
     }
 }
 
-extension Error : CustomStringConvertible {
+extension UVError : CustomStringConvertible {
     public var description: String {
         get {
             switch self {

@@ -34,7 +34,7 @@ public class Prepare : Handle<uv_prepare_p> {
     
     public func start() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_prepare_start(handle, prepare_cb)
             }
         }
@@ -42,28 +42,18 @@ public class Prepare : Handle<uv_prepare_p> {
     
     public func stop() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_prepare_stop(handle)
             }
         }
     }
 }
 
-private func _prepare_cb(handle:uv_prepare_p?) {
-    guard let handle = handle where handle != .null else {
+private func prepare_cb(handle:uv_prepare_p?) {
+    guard let handle = handle, handle != .null else {
         return
     }
     
     let prepare:Prepare = Prepare.from(handle: handle)
     prepare.callback(prepare)
 }
-
-#if swift(>=3.0)
-    private func prepare_cb(handle:uv_prepare_p?) {
-        _prepare_cb(handle: handle)
-    }
-#else
-    private func prepare_cb(handle:uv_prepare_p) {
-        _prepare_cb(handle)
-    }
-#endif

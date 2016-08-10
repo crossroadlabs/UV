@@ -29,9 +29,9 @@ public class Loop {
     }
     
     public init() throws {
-        loop = uv_loop_p(allocatingCapacity: 1)
+        loop = uv_loop_p.allocate(capacity: 1)
         exclusive = true
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_loop_init(loop)
         }
     }
@@ -40,11 +40,11 @@ public class Loop {
         if exclusive {
             defer {
                 loop.deinitialize(count: 1)
-                loop.deallocateCapacity(1)
+                loop.deallocate(capacity: 1)
             }
             do {
                 try close()
-            } catch let e as Error {
+            } catch let e as UVError {
                 print(e.description)
             } catch {
                 print("Unknown error occured while destroying the loop")
@@ -59,28 +59,22 @@ public class Loop {
     }
     
     /*public func configure(option:uv_loop_option, _ args: CVarArgType...) {
-        try Error.handle {
+        try UVError.handle {
             uv_loop_configure(loop, option, getVaList(args))
         }
     }*/
     
     private func close() throws {
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_loop_close(loop)
         }
     }
     
     /// returns true if no more handles are there
-#if swift(>=3.0)
     @discardableResult
     public func run(inMode mode:uv_run_mode = UV_RUN_DEFAULT) -> Bool {
         return uv_run(loop, mode) == 0
     }
-#else
-    public func run(inMode mode:uv_run_mode = UV_RUN_DEFAULT) -> Bool {
-        return uv_run(loop, mode) == 0
-    }
-#endif
     
     public var alive:Bool {
         get {
@@ -123,7 +117,7 @@ public class Loop {
     
     public func walk(f:LoopWalkCallback) {
         let container = AnyContainer(f)
-        let arg = UnsafeMutablePointer<Void>(OpaquePointer(bitPattern:Unmanaged.passUnretained(container)))
+        let arg = Unmanaged.passUnretained(container).toOpaque()
         uv_walk(loop, loop_walker, arg)
     }
     
@@ -136,30 +130,20 @@ public class Loop {
 
 public typealias LoopWalkCallback = (HandleType)->Void
 
-private func _loop_walker(handle:uv_handle_p?, arg:UnsafeMutablePointer<Void>?) {
-    guard let arg = arg where arg != .null else {
+private func loop_walker(handle:uv_handle_p?, arg:UnsafeMutablePointer<Void>?) {
+    guard let arg = arg, arg != .null else {
         return
     }
     
-    guard let handle = handle where handle != .null else {
+    guard let handle = handle, handle != .null else {
         return
     }
     
-    let container = Unmanaged<AnyContainer<LoopWalkCallback>>.fromOpaque(OpaquePointer(arg)).takeUnretainedValue()
+    let container = Unmanaged<AnyContainer<LoopWalkCallback>>.fromOpaque(arg).takeUnretainedValue()
     let callback = container.content
     let handleObject:Handle<uv_handle_p> = Handle.from(handle: handle)
     callback(handleObject)
 }
-
-#if swift(>=3.0)
-    private func loop_walker(handle:uv_handle_p?, arg:UnsafeMutablePointer<Void>?) {
-        _loop_walker(handle: handle, arg: arg)
-    }
-#else
-    private func loop_walker(handle:uv_handle_p, arg:UnsafeMutablePointer<Void>) {
-        _loop_walker(handle, arg: arg)
-    }
-#endif
 
 extension Loop : Equatable {
 }

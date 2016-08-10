@@ -41,7 +41,7 @@ internal extension uv_request_type {
             let req = withUnsafePointer(&this) { pointer in
                 UnsafePointer<uv_req_t>(pointer)
             }
-            return Unmanaged<Request<uv_req_t>>.fromOpaque(OpaquePointer(req.pointee.data)).takeUnretainedValue()
+            return Unmanaged<Request<uv_req_t>>.fromOpaque(req.pointee.data).takeUnretainedValue()
         }
     }
 }
@@ -50,11 +50,11 @@ extension uv_req_t : uv_request_type {
 }
 
 public protocol RequestCallbackCaller {
-    associatedtype RequestCallback = (Self, Error?)->Void
+    associatedtype RequestCallback = (Self, UVError?)->Void
 }
 
 public class Request<Type: uv_request_type> : RequestCallbackCaller {
-    public typealias RequestCallback = (Request, Error?)->Void
+    public typealias RequestCallback = (Request, UVError?)->Void
     
     internal let _req:UnsafeMutablePointer<Type>
     private let _baseReq:UnsafeMutablePointer<uv_req_t>
@@ -62,14 +62,14 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
     private let _callback:RequestCallback
     
     internal init(_ callback:Request<Type>.RequestCallback) {
-        self._req = UnsafeMutablePointer(allocatingCapacity: 1)
+        self._req = UnsafeMutablePointer.allocate(capacity: 1)
         self._baseReq = UnsafeMutablePointer(_req)
         self._callback = callback
     }
     
     deinit {
         _req.deinitialize(count: 1)
-        _req.deallocateCapacity(1)
+        _req.deallocate(capacity: 1)
     }
     
     internal var pointer:UnsafeMutablePointer<Type> {
@@ -77,27 +77,27 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
     }
     
     internal func bear() {
-        _baseReq.pointee.data = UnsafeMutablePointer(OpaquePointer(bitPattern: Unmanaged.passRetained(self)))
+        _baseReq.pointee.data = Unmanaged.passRetained(self).toOpaque()
     }
     
     internal func kill() {
-        Unmanaged<Request<Type>>.fromOpaque(OpaquePointer(_baseReq.pointee.data)).release()
+        Unmanaged<Request<Type>>.fromOpaque(_baseReq.pointee.data).release()
     }
     
     private func call(result status:Int32) {
-        _callback(self, Error.error(code: status))
+        _callback(self, UVError.error(code: status))
     }
     
     public func cancel() throws {
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_cancel(_baseReq)
         }
     }
     
-    public static func perform(callback callback:RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
+    public static func perform(callback:RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
         let req = Request(callback)
         
-        if let error = Error.error(code: action(req.pointer)) {
+        if let error = UVError.error(code: action(req.pointer)) {
             callback(req, error)
             return
         }
@@ -107,7 +107,7 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
 }
 
 internal func req_cb<Type: uv_request_type>(_ req:UnsafeMutablePointer<Type>?, status:Int32) {
-    guard let req = req where req != .null else {
+    guard let req = req, req != .null else {
         return
     }
     

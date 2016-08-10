@@ -21,7 +21,6 @@ let package = Package(
     targets: [Target(name: "UV")],
     dependencies: [
         .Package(url: "https://github.com/reactive-swift/CUV.git", majorVersion: 0, minor: 1),
-        .Package(url: "https://github.com/crossroadlabs/Boilerplate.git", majorVersion: 0, minor: 2),
-        .Package(url: "https://github.com/crossroadlabs/XCTest3.git", majorVersion: 0, minor: 2)
+        .Package(url: "https://github.com/crossroadlabs/Boilerplate.git", Version(1, 0, 0, prereleaseIdentifiers: ["alpha", "1"])),
     ]
 )

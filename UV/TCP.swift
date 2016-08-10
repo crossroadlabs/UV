@@ -52,7 +52,7 @@ public final class TCP : Stream<uv_tcp_p> {
     
     public func bind(to addr:UnsafePointer<sockaddr>, ipV6only:Bool = false) throws {
         let flags:UInt32 = ipV6only ? UV_TCP_IPV6ONLY.rawValue : 0
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_tcp_bind(handle.portable, addr, flags)
         }
     }
@@ -64,12 +64,7 @@ public final class TCP : Stream<uv_tcp_p> {
     }
 }
 
-#if swift(>=3.0)
-    func connect_cb(req:UnsafeMutablePointer<uv_connect_t>?, status:Int32) {
-        req_cb(req, status: status)
-    }
-#else
-    func connect_cb(req:UnsafeMutablePointer<uv_connect_t>, status:Int32) {
-        req_cb(req, status: status)
-    }
-#endif
+
+func connect_cb(req:UnsafeMutablePointer<uv_connect_t>?, status:Int32) {
+    req_cb(req, status: status)
+}
