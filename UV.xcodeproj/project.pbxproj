@@ -110,7 +110,7 @@
 		658566781C7C7911003B0E08 = {
 			isa = PBXGroup;
 			children = (
-				658566841C7C7911003B0E08 /* UV */,
+				658566841C7C7911003B0E08 /* Sources */,
 				658566901C7C7912003B0E08 /* Tests */,
 				65465E6B1C8B733C0080BAAE /* Frameworks */,
 				658566831C7C7911003B0E08 /* Products */,
@@ -126,7 +126,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		658566841C7C7911003B0E08 /* UV */ = {
+		658566841C7C7911003B0E08 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
 				658566871C7C7911003B0E08 /* Info.plist */,
@@ -140,7 +140,7 @@
 				65847EB01C99C1C800156919 /* Stream.swift */,
 				653821811C9D7BBE00FA0F06 /* TCP.swift */,
 			);
-			path = UV;
+			path = Sources;
 			sourceTree = "<group>";
 		};
 		658566901C7C7912003B0E08 /* Tests */ = {
@@ -427,7 +427,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = UV/Info.plist;
+				INFOPLIST_FILE = Sources/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xyz.crossroadlabs.UV;
@@ -451,7 +451,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = UV/Info.plist;
+				INFOPLIST_FILE = Sources/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xyz.crossroadlabs.UV;

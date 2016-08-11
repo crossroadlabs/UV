@@ -18,7 +18,6 @@ import PackageDescription
 
 let package = Package(
     name: "UV",
-    targets: [Target(name: "UV")],
     dependencies: [
         .Package(url: "https://github.com/reactive-swift/CUV.git", majorVersion: 0, minor: 1),
         .Package(url: "https://github.com/crossroadlabs/Boilerplate.git", Version(1, 0, 0, prereleaseIdentifiers: ["alpha", "2"])),
