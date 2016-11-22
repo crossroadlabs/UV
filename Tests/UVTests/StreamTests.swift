@@ -7,8 +7,8 @@
 //
 
 import Foundation
-
 import XCTest
+
 import CUV
 
 @testable import UV
@@ -48,8 +48,12 @@ class StreamTests: XCTestCase {
         
         XCTAssertGreaterThanOrEqual(uv_ip4_addr("127.0.0.1", 45678, &addr), 0)
         
-        try! withUnsafePointer(&addr) { pointer in
-            try server.bind(to: UnsafePointer(pointer))
+        try! withUnsafePointer(to: &addr) { pointer in
+            
+            let addr = pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { pointer in
+                pointer
+            }
+            try server.bind(to: addr)
         }
         
         try! server.listen(backlog: 125)
@@ -65,8 +69,12 @@ class StreamTests: XCTestCase {
             stream.close()
         }
         
-        withUnsafePointer(&addr) { pointer in
-            client.connect(to: UnsafePointer(pointer)) { req, e in
+        withUnsafePointer(to: &addr) { pointer in
+            
+            let sock = pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
+                return UnsafePointer(ptr)
+            }
+            client.connect(to: sock) { req, e in
                 XCTAssertNil(e)
                 connectedExpectation.fulfill()
                 

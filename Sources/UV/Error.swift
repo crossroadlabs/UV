@@ -19,19 +19,19 @@ import Boilerplate
 
 //TODO: make enum
 public enum UVError : Error {
-    case WithCode(code:Int32)
-    case HandleClosed
+    case withCode(code:Int32)
+    case handleClosed
 }
 
 extension UVError : ErrorWithCodeType {
     public init(code:Int32) {
-        self = .WithCode(code: code)
+        self = .withCode(code: code)
     }
     
     public static func isError(_ code:Int32) -> Bool {
         return code < 0
     }
-    
+
     public static func error(code:Int32) -> UVError? {
         return isError(code) ? UVError(code: code) : nil
     }
@@ -41,9 +41,9 @@ public extension UVError {
     public var name:String {
         get {
             switch self {
-            case .HandleClosed:
+            case .handleClosed:
                 return "HandleClosed"
-            case .WithCode(let code):
+            case .withCode(let code):
                 return String(cString: uv_err_name(code))
             }
         }
@@ -54,9 +54,9 @@ extension UVError : CustomStringConvertible {
     public var description: String {
         get {
             switch self {
-            case .HandleClosed:
+            case .handleClosed:
                 return "The handle you are trying to is was already closed"
-            case .WithCode(let code):
+            case .withCode(let code):
                 return String(cString: uv_strerror(code))
             }
         }

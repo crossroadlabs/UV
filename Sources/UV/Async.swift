@@ -22,9 +22,9 @@ public typealias uv_async_p = UnsafeMutablePointer<uv_async_t>
 public typealias AsyncCallback = (Async) -> Void
 
 public class Async : Handle<uv_async_p> {
-    private let callback:AsyncCallback
+    fileprivate let callback:AsyncCallback
     
-    public init(loop:Loop, callback:AsyncCallback) throws {
+    public init(loop:Loop, callback:@escaping AsyncCallback) throws {
         self.callback = callback
         try super.init { handle in
             uv_async_init(loop.loop, handle.portable, async_cb)
@@ -44,3 +44,4 @@ private func async_cb(handle:uv_async_p?) {
     let async:Async = Async.from(handle:handle)
     async.callback(async)
 }
+

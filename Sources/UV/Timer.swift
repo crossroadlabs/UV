@@ -22,9 +22,9 @@ public typealias uv_timer_p = UnsafeMutablePointer<uv_timer_t>
 public typealias TimerCallback = (Timer) -> Void
 
 public class Timer : Handle<uv_timer_p> {
-    private let callback:TimerCallback
+    fileprivate let callback:TimerCallback
     
-    public init(loop:Loop, callback:TimerCallback) throws {
+    public init(loop:Loop, callback:@escaping TimerCallback) throws {
         self.callback = callback
         try super.init { handle in
             uv_timer_init(loop.loop, handle.portable)

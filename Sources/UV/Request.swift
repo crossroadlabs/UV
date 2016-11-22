@@ -31,17 +31,19 @@ public typealias uv_udp_send_p = UnsafeMutablePointer<uv_udp_send_t>
 public typealias uv_work_p = UnsafeMutablePointer<uv_work_t>
 public typealias uv_write_p = UnsafeMutablePointer<uv_write_t>
 
-public protocol uv_request_type {
+public protocol uv_request_type  {
 }
 
 internal extension uv_request_type {
+    
     internal var request:Request<uv_req_t> {
         get {
             var this = self
-            let req = withUnsafePointer(&this) { pointer in
-                UnsafePointer<uv_req_t>(pointer)
+            return withUnsafePointer(to: &this) { p in
+                return p.withMemoryRebound(to:uv_req_t.self, capacity: 1){ pointer in
+                    return Unmanaged<Request<uv_req_t>>.fromOpaque(pointer.pointee.data).takeUnretainedValue()
+                }
             }
-            return Unmanaged<Request<uv_req_t>>.fromOpaque(req.pointee.data).takeUnretainedValue()
         }
     }
 }
@@ -57,13 +59,15 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
     public typealias RequestCallback = (Request, UVError?)->Void
     
     internal let _req:UnsafeMutablePointer<Type>
-    private let _baseReq:UnsafeMutablePointer<uv_req_t>
+    fileprivate let _baseReq:UnsafeMutablePointer<uv_req_t>
     
-    private let _callback:RequestCallback
+    fileprivate let _callback:RequestCallback
     
-    internal init(_ callback:Request<Type>.RequestCallback) {
+    internal init(_ callback:@escaping Request<Type>.RequestCallback) {
         self._req = UnsafeMutablePointer.allocate(capacity: 1)
-        self._baseReq = UnsafeMutablePointer(_req)
+        //UnsafePointer.withMemoryRebound(_req)
+
+        self._baseReq = _req.withMemoryRebound(to: uv_req_t.self, capacity: 1){ pointer in pointer }
         self._callback = callback
     }
     
@@ -77,14 +81,14 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
     }
     
     internal func bear() {
-        _baseReq.pointee.data = Unmanaged.passRetained(self).toOpaque()
+        _baseReq.pointee.data = UnsafeMutableRawPointer(Unmanaged.passRetained(self).toOpaque())
     }
     
     internal func kill() {
-        Unmanaged<Request<Type>>.fromOpaque(_baseReq.pointee.data).release()
+        Unmanaged<Request<Type>>.fromOpaque(_baseReq).release()
     }
     
-    private func call(result status:Int32) {
+    fileprivate func call(result status:Int32) {
         _callback(self, UVError.error(code: status))
     }
     
@@ -94,7 +98,7 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
         }
     }
     
-    public static func perform(callback:RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
+    public static func perform(callback:@escaping RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
         let req = Request(callback)
         
         if let error = UVError.error(code: action(req.pointer)) {
@@ -107,7 +111,7 @@ public class Request<Type: uv_request_type> : RequestCallbackCaller {
 }
 
 internal func req_cb<Type: uv_request_type>(_ req:UnsafeMutablePointer<Type>?, status:Int32) {
-    guard let req = req, req != .null else {
+    guard let req = req else {
         return
     }
     

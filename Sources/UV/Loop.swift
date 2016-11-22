@@ -20,7 +20,7 @@ import Boilerplate
 public typealias uv_loop_p = UnsafeMutablePointer<uv_loop_t>
 
 public class Loop {
-    private let exclusive:Bool
+    fileprivate let exclusive:Bool
     public let loop:uv_loop_p
     
     public init(loop:uv_loop_p) {
@@ -64,7 +64,7 @@ public class Loop {
         }
     }*/
     
-    private func close() throws {
+    fileprivate func close() throws {
         try ccall(UVError.self) {
             uv_loop_close(loop)
         }
@@ -86,7 +86,7 @@ public class Loop {
         uv_stop(loop)
     }
     
-    private static var size:UInt64 {
+    fileprivate static var size:UInt64 {
         return UInt64(uv_loop_size())
     }
     
@@ -115,9 +115,9 @@ public class Loop {
         uv_update_time(loop)
     }
     
-    public func walk(f:LoopWalkCallback) {
+    public func walk(_ f:LoopWalkCallback) {
         let container = AnyContainer(f)
-        let arg = Unmanaged.passUnretained(container).toOpaque()
+        let arg = UnsafeMutableRawPointer(Unmanaged.passUnretained(container).toOpaque())
         uv_walk(loop, loop_walker, arg)
     }
     
@@ -130,12 +130,12 @@ public class Loop {
 
 public typealias LoopWalkCallback = (HandleType)->Void
 
-private func loop_walker(handle:uv_handle_p?, arg:UnsafeMutablePointer<Void>?) {
-    guard let arg = arg, arg != .null else {
+private func loop_walker(_ handle:uv_handle_p?, arg:UnsafeMutableRawPointer?) {
+    guard let arg = arg else {
         return
     }
     
-    guard let handle = handle, handle != .null else {
+    guard let handle = handle else {
         return
     }
     
@@ -144,6 +144,7 @@ private func loop_walker(handle:uv_handle_p?, arg:UnsafeMutablePointer<Void>?) {
     let handleObject:Handle<uv_handle_p> = Handle.from(handle: handle)
     callback(handleObject)
 }
+
 
 extension Loop : Equatable {
 }

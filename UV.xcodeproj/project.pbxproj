@@ -26,6 +26,7 @@
 		658566A11C7C9315003B0E08 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658566A01C7C9315003B0E08 /* Error.swift */; };
 		658C31701C8DD854009CCC7A /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658C316F1C8DD854009CCC7A /* Async.swift */; };
 		65CBF4781CC8DCA2004C27B4 /* StreamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CBF4771CC8DCA2004C27B4 /* StreamTests.swift */; };
+		D0A7F3821DAD27AB005C6D51 /* Cartfile in Resources */ = {isa = PBXBuildFile; fileRef = D0A7F3811DAD27AB005C6D51 /* Cartfile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 		658566A01C7C9315003B0E08 /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Error.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		658C316F1C8DD854009CCC7A /* Async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 		65CBF4771CC8DCA2004C27B4 /* StreamTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StreamTests.swift; sourceTree = "<group>"; };
+		D0A7F3811DAD27AB005C6D51 /* Cartfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +116,7 @@
 				92F15ADC1D5C9F2700CDF148 /* Tests */,
 				65465E6B1C8B733C0080BAAE /* Frameworks */,
 				658566831C7C7911003B0E08 /* Products */,
+				D0A7F3811DAD27AB005C6D51 /* Cartfile */,
 			);
 			sourceTree = "<group>";
 		};
@@ -143,7 +146,7 @@
 			path = UV;
 			sourceTree = "<group>";
 		};
-		658566901C7C7912003B0E08 /* UVTestSuite */ = {
+		658566901C7C7912003B0E08 /* UVTests */ = {
 			isa = PBXGroup;
 			children = (
 				658566911C7C7912003B0E08 /* UVTests.swift */,
@@ -151,8 +154,7 @@
 				65063F3F1C7CECDE00E1F8FE /* LoopTests.swift */,
 				65CBF4771CC8DCA2004C27B4 /* StreamTests.swift */,
 			);
-			name = UVTestSuite;
-			path = UV;
+			path = UVTests;
 			sourceTree = "<group>";
 		};
 		92F15ADB1D5C9F0B00CDF148 /* Sources */ = {
@@ -166,7 +168,7 @@
 		92F15ADC1D5C9F2700CDF148 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				658566901C7C7912003B0E08 /* UVTestSuite */,
+				658566901C7C7912003B0E08 /* UVTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -234,9 +236,11 @@
 				TargetAttributes = {
 					658566811C7C7911003B0E08 = {
 						CreatedOnToolsVersion = 7.2.1;
+						LastSwiftMigration = 0810;
 					};
 					6585668B1C7C7912003B0E08 = {
 						CreatedOnToolsVersion = 7.2.1;
+						LastSwiftMigration = 0810;
 					};
 				};
 			};
@@ -263,6 +267,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D0A7F3821DAD27AB005C6D51 /* Cartfile in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,6 +428,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/Carthage/Checkouts $(PROJECT_DIR)/Packages/**";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				SWIFT_VERSION = 3.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -433,6 +439,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -450,6 +457,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -457,6 +465,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -474,6 +483,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -485,10 +495,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = Tests/UV/Info.plist;
+				INFOPLIST_FILE = Tests/UVTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xyz.crossroadlabs.UVTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -500,11 +511,12 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = Tests/UV/Info.plist;
+				INFOPLIST_FILE = Tests/UVTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xyz.crossroadlabs.UVTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
