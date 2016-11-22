@@ -24,7 +24,7 @@ public typealias uv_tcp_p = UnsafeMutablePointer<uv_tcp_t>
 extension uv_connect_t : uv_request_type {
 }
 
-open class ConnectRequest : Request<uv_connect_t> {
+public class ConnectRequest : Request<uv_connect_t> {
 }
 
 public final class TCP : Stream<uv_tcp_p> {
@@ -52,7 +52,7 @@ public final class TCP : Stream<uv_tcp_p> {
     
     public func bind(to addr:UnsafePointer<sockaddr>, ipV6only:Bool = false) throws {
         let flags:UInt32 = ipV6only ? UV_TCP_IPV6ONLY.rawValue : 0
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_tcp_bind(handle.portable, addr, flags)
         }
     }
@@ -64,6 +64,6 @@ public final class TCP : Stream<uv_tcp_p> {
     }
 }
 
-    func connect_cb(req:UnsafeMutablePointer<uv_connect_t>?, status:Int32) {
-        req_cb(req, status: status)
-    }
+private func connect_cb(req:UnsafeMutablePointer<uv_connect_t>?, status:Int32) {
+    req_cb(req, status: status)
+}

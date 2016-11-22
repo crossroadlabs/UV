@@ -21,7 +21,7 @@ public typealias uv_timer_p = UnsafeMutablePointer<uv_timer_t>
 
 public typealias TimerCallback = (Timer) -> Void
 
-open class Timer : Handle<uv_timer_p> {
+public class Timer : Handle<uv_timer_p> {
     fileprivate let callback:TimerCallback
     
     public init(loop:Loop, callback:@escaping TimerCallback) throws {
@@ -32,34 +32,34 @@ open class Timer : Handle<uv_timer_p> {
     }
     
     //uv_timer_start
-    open func start(timeout:Timeout, repeatTimeout:Timeout? = nil) throws {
+    public func start(timeout:Timeout, repeatTimeout:Timeout? = nil) throws {
         try doWithHandle { handle in
             let repeatTimeout = repeatTimeout ?? .Immediate
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_timer_start(handle, timer_cb, timeout.uvTimeout, repeatTimeout.uvTimeout)
             }
         }
     }
     
     //uv_timer_stop
-    open func stop() throws {
+    public func stop() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_timer_stop(handle)
             }
         }
     }
     
     //uv_timer_again
-    open func again() throws {
+    public func again() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_timer_again(handle)
             }
         }
     }
     
-    open var repeatTimeout:Timeout {
+    public var repeatTimeout:Timeout {
         //uv_timer_get_repeat
         get {
             return handle.isNil ? .Immediate : Timeout(uvTimeout: uv_timer_get_repeat(handle.portable))
@@ -74,14 +74,9 @@ open class Timer : Handle<uv_timer_p> {
     
 }
 
-private func _timer_cb(handle:uv_timer_p?) {
+private func timer_cb(handle:uv_timer_p?) {
     let timer:Timer = Timer.from(handle: handle)
     timer.callback(timer)
-}
-
-
-private func timer_cb(handle:uv_timer_p?) {
-    _timer_cb(handle: handle)
 }
 
 extension Timeout {

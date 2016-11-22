@@ -22,7 +22,7 @@ public typealias uv_prepare_p = UnsafeMutablePointer<uv_prepare_t>
 
 public typealias PrepareCallback = (Prepare) -> Void
 
-open class Prepare : Handle<uv_prepare_p> {
+public class Prepare : Handle<uv_prepare_p> {
     fileprivate let callback:PrepareCallback
     
     public init(loop:Loop, callback:@escaping PrepareCallback) throws {
@@ -32,33 +32,28 @@ open class Prepare : Handle<uv_prepare_p> {
         }
     }
     
-    open func start() throws {
+    public func start() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_prepare_start(handle, prepare_cb)
             }
         }
     }
     
-    open func stop() throws {
+    public func stop() throws {
         try doWithHandle { handle in
-            try ccall(Error.self) {
+            try ccall(UVError.self) {
                 uv_prepare_stop(handle)
             }
         }
     }
 }
 
-private func _prepare_cb(_ handle:uv_prepare_p?) {
-    guard let handle = handle , handle != .null else {
+private func prepare_cb(_ handle:uv_prepare_p?) {
+    guard let handle = handle else {
         return
     }
     
     let prepare:Prepare = Prepare.from(handle: handle)
     prepare.callback(prepare)
-}
-
-
-private func prepare_cb(_ handle:uv_prepare_p?) {
-    _prepare_cb(handle)
 }

@@ -21,7 +21,7 @@ public typealias uv_async_p = UnsafeMutablePointer<uv_async_t>
 
 public typealias AsyncCallback = (Async) -> Void
 
-open class Async : Handle<uv_async_p> {
+public class Async : Handle<uv_async_p> {
     fileprivate let callback:AsyncCallback
     
     public init(loop:Loop, callback:@escaping AsyncCallback) throws {
@@ -33,18 +33,15 @@ open class Async : Handle<uv_async_p> {
     
     /// uv_async_send
     /// the only thread safe function in this lib
-    open func send() {
+    public func send() {
         if !handle.isNil {
             uv_async_send(handle.portable)
         }
     }
 }
 
-private func _async_cb(_ handle:uv_async_p?) {
+private func async_cb(handle:uv_async_p?) {
     let async:Async = Async.from(handle:handle)
     async.callback(async)
 }
 
-    private func async_cb(handle:uv_async_p?) {
-        return _async_cb(handle)
-    }

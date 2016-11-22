@@ -4,15 +4,14 @@ env:
 matrix:
   include:
     - script:
-        - xcodebuild test -project $MODULE_NAME.xcodeproj -scheme $MODULE_NAME
+        - xcodebuild clean test -project $MODULE_NAME.xcodeproj -scheme $MODULE_NAME | xcpretty --color && exit ${PIPESTATUS[0]}
       os: osx
-      osx_image: xcode7.3
+      osx_image: xcode8.1
       language: objective-c
       before_install:
         - brew update
         - brew outdated carthage || brew upgrade carthage
         - brew install libuv
-        # - brew outdated xctool || brew upgrade xctool
       before_script:
         # bootstrap the dependencies for the project
         # you can remove if you don't have dependencies
@@ -20,7 +19,6 @@ matrix:
       before_deploy:
         - carthage build --no-skip-current
         - carthage archive $MODULE_NAME
-        #- pod trunk push CrossroadRegex.podspec
       deploy:
         provider: releases
         api_key:
@@ -31,7 +29,7 @@ matrix:
           repo: reactive-swift/UV
           tags: true
     - script:
-        - ./build test
+        - swift build && swift test
       sudo: required
       dist: trusty
       language: generic
@@ -39,18 +37,17 @@ matrix:
         # install original swift distribution
         - wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -
         - cd ..
-        - export SWIFT_VERSION="swift-DEVELOPMENT-SNAPSHOT-2016-03-24-a"
-        - wget https://swift.org/builds/development/ubuntu1404/$SWIFT_VERSION/$SWIFT_VERSION-ubuntu14.04.tar.gz
-        - tar xzf $SWIFT_VERSION-ubuntu14.04.tar.gz
-        - export PATH="${PWD}/${SWIFT_VERSION}-ubuntu14.04/usr/bin:${PATH}"
+        - export SWIFT_VERSION="swift-3.0.1-release"
+        - SWIFT_VERSION_UPPER=`echo $SWIFT_VERSION | perl -n -e'/^(.*?)-([\.\d]*?)-(.*)$/; $code = uc $3; print "$1-$2-${code}"'`
+        - wget https://swift.org/builds/$SWIFT_VERSION/ubuntu1404/$SWIFT_VERSION_UPPER/$SWIFT_VERSION_UPPER-ubuntu14.04.tar.gz
+        - tar xzf $SWIFT_VERSION_UPPER-ubuntu14.04.tar.gz
+        - export PATH="${PWD}/${SWIFT_VERSION_UPPER}-ubuntu14.04/usr/bin:${PATH}"
+        - export LD_LIBRARY_PATH="${PWD}/${SWIFT_VERSION_UPPER}-ubuntu14.04/usr/lib/swift/linux/:$LD_LIBRARY_PATH"
         # libuv v1
         - sudo add-apt-repository ppa:swiftexpress/swiftexpress --yes
         - sudo apt-get update
         - sudo apt-get install libuv1-dev
         # get back home
         - cd $MODULE_NAME
-        # get crossroad build script
-        - wget https://raw.githubusercontent.com/crossroadlabs/utils/master/build
-        - chmod +x build
 notifications:
   email: false

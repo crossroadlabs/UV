@@ -107,13 +107,13 @@ private struct UVData : DataProtocol {
     }
 }
 
-open class Data : DataProtocol {
+public class Data : DataProtocol {
     fileprivate let buffer:uv_buf_t
     fileprivate let data:[UInt8]
     
-    open let buffers:UnsafePointer<uv_buf_t>
-    open let count:UInt32 = 1
-    open let len:UInt32
+    public let buffers:UnsafePointer<uv_buf_t>
+    public let count:UInt32 = 1
+    public let len:UInt32
     
     public init(data:[UInt8]) {
         self.data = data
@@ -130,32 +130,32 @@ open class Data : DataProtocol {
         self.buffers = withUnsafePointer(to: &self.buffer) {p in p}
     }
     
-    open var array:[UInt8] {
+    public var array:[UInt8] {
         return data
     }
     
-    open func destroy() {
+    public func destroy() {
     }
 }
 
 public protocol ReadCallbackCaller {
-    associatedtype ReadCallback = (Self, Result<DataProtocol, Error>)->Void
+    associatedtype ReadCallback = (Self, Result<DataProtocol, UVError>)->Void
 }
 
-open class ShutdownRequest : Request<uv_shutdown_t> {
+public class ShutdownRequest : Request<uv_shutdown_t> {
 }
 
-open class WriteRequest : Request<uv_write_t> {
+public class WriteRequest : Request<uv_write_t> {
 }
 
 internal protocol StreamProtocol : ReadCallbackCaller {
     func fresh(on loop:Loop, readCallback:Self.ReadCallback) throws -> Self
 }
 
-open class Stream<Type : uv_stream_type> : Handle<Type>, SimpleCallbackCaller, ReadCallbackCaller, StreamProtocol {
+public class Stream<Type : uv_stream_type> : Handle<Type>, SimpleCallbackCaller, ReadCallbackCaller, StreamProtocol {
    
     public typealias SimpleCallback = (Stream)->Void
-    public typealias ReadCallback = (Stream, Result<DataProtocol, Error>)->Void
+    public typealias ReadCallback = (Stream, Result<DataProtocol, UVError>)->Void
     
     fileprivate lazy var streamHandle:uv_stream_p? = self.getStreamHandle()
     
@@ -176,40 +176,40 @@ open class Stream<Type : uv_stream_type> : Handle<Type>, SimpleCallbackCaller, R
         try super.init(initializer)
     }
     
-    open func shutdown(callback fun:@escaping ShutdownRequest.RequestCallback = {_,_ in}) {
+    public func shutdown(callback fun:@escaping ShutdownRequest.RequestCallback = {_,_ in}) {
         ShutdownRequest.perform(callback: fun) { req in
             uv_shutdown(req, self.streamHandle.portable, shutdown_cb)
         }
     }
     
-    open func listen(backlog:Int32) throws {
-        try ccall(Error.self) {
+    public func listen(backlog:Int32) throws {
+        try ccall(UVError.self) {
             uv_listen(streamHandle.portable, backlog, connection_cb)
         }
     }
     
-    open func accept(readCallback fun:@escaping ReadCallback = {_,_ in}) throws -> Self {
+    public func accept(readCallback fun:@escaping ReadCallback = {_,_ in}) throws -> Self {
         let new = try self.fresh(on: loop!, readCallback: fun)
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_accept(self.streamHandle.portable, new.streamHandle.portable)
         }
         
         return new
     }
-    
-    open func startReading() throws {
-        try ccall(Error.self) {
+
+    public func startReading() throws {
+        try ccall(UVError.self) {
             uv_read_start(self.streamHandle.portable, alloc_cb, read_cb)
         }
     }
     
-    open func stopReading() throws {
-        try ccall(Error.self) {
+    public func stopReading() throws {
+        try ccall(UVError.self) {
             uv_read_stop(self.streamHandle.portable)
         }
     }
-    
-    open func write(data:DataProtocol, callback: @escaping WriteRequest.RequestCallback) {
+
+    public func write(data:DataProtocol, callback: @escaping WriteRequest.RequestCallback) {
         WriteRequest.perform(callback: callback) { preq in
             let buffers = data.buffers
             var new:[uv_buf_t] = []
@@ -239,20 +239,20 @@ open class Stream<Type : uv_stream_type> : Handle<Type>, SimpleCallbackCaller, R
         }
     }
     
-    open func tryWrite(data:DataProtocol) -> Int? {
+    public func tryWrite(data:DataProtocol) -> Int? {
         let written = Int(uv_try_write(streamHandle.portable, data.buffers, data.count))
         return written > 0 ? written : nil
     }
 }
 
-private func _read_cb(_ stream:uv_stream_p?, nread:ssize_t, bufp:UnsafePointer<uv_buf_t>?) {
+private func read_cb(stream:uv_stream_p?, nread:ssize_t, bufp:UnsafePointer<uv_buf_t>?) {
     //just skip it. No data. Optimization
     if nread == 0 {
         return
     }
     
-    let e = Error.error(code: Int32(nread))
-    let result:Result<DataProtocol, Error> = e.map { e in
+    let e = UVError.error(code: Int32(nread))
+    let result:Result<DataProtocol, UVError> = e.map { e in
         Result(error: e)
     }.getOr {
         let data = UVData(size: nread, buffers: bufp!)
@@ -268,49 +268,21 @@ private func _read_cb(_ stream:uv_stream_p?, nread:ssize_t, bufp:UnsafePointer<u
     stream.readCallback(stream, result)
 }
 
+private func alloc_cb(handle:uv_handle_p?, suggestedSize:size_t, buf:UnsafeMutablePointer<uv_buf_t>?) {
+    buf?.pointee.base = UnsafeMutablePointer.allocate(capacity: suggestedSize)
+    buf?.pointee.len = suggestedSize
+}
 
-    private func read_cb(stream:uv_stream_p?, nread:ssize_t, bufp:UnsafePointer<uv_buf_t>?) {
-        _read_cb(stream, nread: nread, bufp: bufp)
-    }
+private func write_cb(req:UnsafeMutablePointer<uv_write_t>?, status:Int32) {
+    req_cb(req, status: status)
+}
 
-#if swift(>=3.0)
-    func alloc_cb(handle:uv_handle_p?, suggestedSize:size_t, buf:UnsafeMutablePointer<uv_buf_t>?) {
-        buf?.pointee.base = UnsafeMutablePointer.allocate(capacity: suggestedSize)
-        buf?.pointee.len = suggestedSize
-    }
-#else
-    func alloc_cb(_ handle:uv_handle_p, suggestedSize:size_t, buf:UnsafeMutablePointer<uv_buf_t>) {
-        buf.pointee.base = UnsafeMutablePointer(allocatingCapacity: suggestedSize)
-        buf.pointee.len = suggestedSize
-    }
-#endif
-
-#if swift(>=3.0)
-    func write_cb(req:UnsafeMutablePointer<uv_write_t>?, status:Int32) {
-        req_cb(req, status: status)
-    }
-#else
-    func write_cb(_ req:UnsafeMutablePointer<uv_write_t>, status:Int32) {
-        req_cb(req, status: status)
-    }
-#endif
-
-#if swift(>=3.0)
-    func shutdown_cb(req:UnsafeMutablePointer<uv_shutdown_t>?, status:Int32) {
-        req_cb(req, status: status)
-    }
-#else
-    func shutdown_cb(_ req:UnsafeMutablePointer<uv_shutdown_t>, status:Int32) {
-        req_cb(req, status: status)
-    }
-#endif
-
-private func _connection_cb(_ server:uv_stream_p?, status:Int32) {
-    let handle:uv_handle_p? = server.map({$0.cast()})
-    let stream = Stream<uv_stream_p>.from(handle: handle)
-    stream.connectionCallback(stream)
+private func shutdown_cb(req:UnsafeMutablePointer<uv_shutdown_t>?, status:Int32) {
+    req_cb(req, status: status)
 }
 
 private func connection_cb(server:uv_stream_p?, status:Int32) {
-    _connection_cb(server, status: status)
+    let handle:uv_handle_p? = server.map({$0.cast()})
+    let stream = Stream<uv_stream_p>.from(handle: handle)
+    stream.connectionCallback(stream)
 }

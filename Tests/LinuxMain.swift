@@ -1,8 +1,9 @@
 import XCTest
 
-@testable import UVTestSuite
+import UVTests
 
-XCTMain([
-	testCase(LoopTests.allTests),
-	testCase(UVTests.allTests),
-])
+var tests = [XCTestCaseEntry]()
+
+tests += UVTests.allTests()
+
+XCTMain(tests)

@@ -7,10 +7,11 @@
 //
 
 import Foundation
-
 import XCTest
-@testable import UV
+
 import CUV
+
+@testable import UV
 
 class StreamTests: XCTestCase {
     func testConnectability() {
@@ -92,3 +93,13 @@ class StreamTests: XCTestCase {
         self.waitForExpectations(timeout: 0)
     }
 }
+
+#if os(Linux)
+extension StreamTests {
+	static var allTests : [(String, (StreamTests) -> () throws -> Void)] {
+		return [
+			("testConnectability", testConnectability),
+		]
+	}
+}
+#endif

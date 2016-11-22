@@ -19,9 +19,9 @@ import Boilerplate
 
 public typealias uv_loop_p = UnsafeMutablePointer<uv_loop_t>
 
-open class Loop {
+public class Loop {
     fileprivate let exclusive:Bool
-    open let loop:uv_loop_p
+    public let loop:uv_loop_p
     
     public init(loop:uv_loop_p) {
         self.loop = loop
@@ -31,7 +31,7 @@ open class Loop {
     public init() throws {
         loop = uv_loop_p.allocate(capacity: 1)
         exclusive = true
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_loop_init(loop)
         }
     }
@@ -44,7 +44,7 @@ open class Loop {
             }
             do {
                 try close()
-            } catch let e as Error {
+            } catch let e as UVError {
                 print(e.description)
             } catch {
                 print("Unknown error occured while destroying the loop")
@@ -52,43 +52,37 @@ open class Loop {
         }
     }
     
-    open static var defaultLoop: Loop {
+    public static var defaultLoop: Loop {
         get {
             return Loop(loop: uv_default_loop())
         }
     }
     
     /*public func configure(option:uv_loop_option, _ args: CVarArgType...) {
-        try Error.handle {
+        try UVError.handle {
             uv_loop_configure(loop, option, getVaList(args))
         }
     }*/
     
     fileprivate func close() throws {
-        try ccall(Error.self) {
+        try ccall(UVError.self) {
             uv_loop_close(loop)
         }
     }
     
     /// returns true if no more handles are there
-#if swift(>=3.0)
     @discardableResult
     public func run(inMode mode:uv_run_mode = UV_RUN_DEFAULT) -> Bool {
         return uv_run(loop, mode) == 0
     }
-#else
-    open func run(inMode mode:uv_run_mode = UV_RUN_DEFAULT) -> Bool {
-        return uv_run(loop, mode) == 0
-    }
-#endif
     
-    open var alive:Bool {
+    public var alive:Bool {
         get {
             return uv_loop_alive(loop) != 0
         }
     }
     
-    open func stop() {
+    public func stop() {
         uv_stop(loop)
     }
     
@@ -96,7 +90,7 @@ open class Loop {
         return UInt64(uv_loop_size())
     }
     
-    open var backendFd:Int32 {
+    public var backendFd:Int32 {
         get {
             return uv_backend_fd(loop)
         }
@@ -104,30 +98,30 @@ open class Loop {
     
     //in millisec
     //wierd thing, doc says it should return -1 on no timeout, in fact - 0. Leaving as is for now. Subject to investigate
-    open var backendTimeout:Int32? {
+    public var backendTimeout:Int32? {
         get {
             let timeout = uv_backend_timeout(loop)
             return timeout == -1 ? nil : timeout
         }
     }
     
-    open var now:UInt64 {
+    public var now:UInt64 {
         get {
             return uv_now(loop)
         }
     }
     
-    open func updateTime() {
+    public func updateTime() {
         uv_update_time(loop)
     }
     
-    open func walk(_ f:LoopWalkCallback) {
+    public func walk(_ f:LoopWalkCallback) {
         let container = AnyContainer(f)
         let arg = UnsafeMutableRawPointer(Unmanaged.passUnretained(container).toOpaque())
         uv_walk(loop, loop_walker, arg)
     }
     
-    open var handles:Array<HandleType> {
+    public var handles:Array<HandleType> {
         get {
             return Array(enumerator: walk)
         }
@@ -136,22 +130,19 @@ open class Loop {
 
 public typealias LoopWalkCallback = (HandleType)->Void
 
-private func _loop_walker(_ handle:uv_handle_p?, arg:UnsafeMutableRawPointer?) {
-    guard let arg = arg , arg != .null else {
+private func loop_walker(_ handle:uv_handle_p?, arg:UnsafeMutableRawPointer?) {
+    guard let arg = arg else {
         return
     }
     
-    guard let handle = handle , handle != .null else {
+    guard let handle = handle else {
         return
     }
+    
     let container = Unmanaged<AnyContainer<LoopWalkCallback>>.fromOpaque(arg).takeUnretainedValue()
     let callback = container.content
     let handleObject:Handle<uv_handle_p> = Handle.from(handle: handle)
     callback(handleObject)
-}
-
-private func loop_walker(handle:uv_handle_p?, arg:UnsafeMutableRawPointer?) {
-    _loop_walker(handle, arg: arg)
 }
 
 

@@ -52,11 +52,11 @@ extension uv_req_t : uv_request_type {
 }
 
 public protocol RequestCallbackCaller {
-    associatedtype RequestCallback = (Self, Error?)->Void
+    associatedtype RequestCallback = (Self, UVError?)->Void
 }
 
-open class Request<Type: uv_request_type> : RequestCallbackCaller {
-    public typealias RequestCallback = (Request, Error?)->Void
+public class Request<Type: uv_request_type> : RequestCallbackCaller {
+    public typealias RequestCallback = (Request, UVError?)->Void
     
     internal let _req:UnsafeMutablePointer<Type>
     fileprivate let _baseReq:UnsafeMutablePointer<uv_req_t>
@@ -89,19 +89,19 @@ open class Request<Type: uv_request_type> : RequestCallbackCaller {
     }
     
     fileprivate func call(result status:Int32) {
-        _callback(self, Error.error(code: status))
+        _callback(self, UVError.error(code: status))
     }
     
-    open func cancel() throws {
-        try ccall(Error.self) {
+    public func cancel() throws {
+        try ccall(UVError.self) {
             uv_cancel(_baseReq)
         }
     }
     
-    open static func perform(callback:@escaping RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
+    public static func perform(callback:@escaping RequestCallback, action:(UnsafeMutablePointer<Type>)->Int32) {
         let req = Request(callback)
         
-        if let error = Error.error(code: action(req.pointer)) {
+        if let error = UVError.error(code: action(req.pointer)) {
             callback(req, error)
             return
         }
@@ -111,7 +111,7 @@ open class Request<Type: uv_request_type> : RequestCallbackCaller {
 }
 
 internal func req_cb<Type: uv_request_type>(_ req:UnsafeMutablePointer<Type>?, status:Int32) {
-    guard let req = req , req != .null else {
+    guard let req = req else {
         return
     }
     
