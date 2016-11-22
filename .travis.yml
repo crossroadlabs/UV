@@ -4,15 +4,14 @@ env:
 matrix:
   include:
     - script:
-        - xcodebuild test -project $MODULE_NAME.xcodeproj -scheme $MODULE_NAME
+        - xcodebuild clean test -project $MODULE_NAME.xcodeproj -scheme $MODULE_NAME | xcpretty --color && exit ${PIPESTATUS[0]}
       os: osx
-      osx_image: xcode8
+      osx_image: xcode8.1
       language: objective-c
       before_install:
         - brew update
         - brew outdated carthage || brew upgrade carthage
         - brew install libuv
-        # - brew outdated xctool || brew upgrade xctool
       before_script:
         # bootstrap the dependencies for the project
         # you can remove if you don't have dependencies
@@ -20,7 +19,6 @@ matrix:
       before_deploy:
         - carthage build --no-skip-current
         - carthage archive $MODULE_NAME
-        #- pod trunk push CrossroadRegex.podspec
       deploy:
         provider: releases
         api_key:
@@ -39,7 +37,7 @@ matrix:
         # install original swift distribution
         - wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -
         - cd ..
-        - export SWIFT_VERSION="swift-3.0-preview-4"
+        - export SWIFT_VERSION="swift-3.0.1-release"
         - SWIFT_VERSION_UPPER=`echo $SWIFT_VERSION | perl -n -e'/^(.*?)-([\.\d]*?)-(.*)$/; $code = uc $3; print "$1-$2-${code}"'`
         - wget https://swift.org/builds/$SWIFT_VERSION/ubuntu1404/$SWIFT_VERSION_UPPER/$SWIFT_VERSION_UPPER-ubuntu14.04.tar.gz
         - tar xzf $SWIFT_VERSION_UPPER-ubuntu14.04.tar.gz
